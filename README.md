@@ -1,0 +1,2 @@
+# Crabot
+A chat assistant.
