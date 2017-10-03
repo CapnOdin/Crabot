@@ -9,13 +9,13 @@ class Crabot:
 	cmds = {}
 	responses = queue.Queue(10)
 	
-	def __init__(self, lst):
+	def __init__(self, lst, callback):
 		for key in lst:
 			obj = self.addChar(self.cmds, key[0])
 			for c in key[1:]:
 				obj = self.addChar(obj, c)
 			obj["fun"] = getattr(Commands, lst[key])
-		self.Respond(self.responses).start()
+		self.Respond(self.responses, callback).start()
 	
 	def addChar(self, obj, char):
 		if(not char in obj):
@@ -28,15 +28,16 @@ class Crabot:
 	
 	class Respond(threading.Thread):
 		
-		def __init__(self, responses):
+		def __init__(self, responses, callback):
 			super().__init__()
 			self.responses = responses
+			self.callback = callback
 		
 		def run(self):
 			while True:
 				msg = self.responses.get()
 				if(msg):
-					print(msg)
+					self.callback(msg)
 				time.sleep(1)
 	
 	class Cmd(threading.Thread):
@@ -66,7 +67,7 @@ class Crabot:
 					self.responses.put(res)
 
 
-bot = Crabot({"!h" : "hello"})
+bot = Crabot({"!h" : "hello"}, lambda msg: print(msg))
 for i in range(100):
 	bot.evalCmd("!h Cap'n Odin")
 
