@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import threading, queue, time
-
 import Commands
 
 class Crabot:
@@ -26,6 +25,7 @@ class Crabot:
 		if(not self.responses.full()):
 			self.Cmd(msg, self.cmds, self.responses).start()
 	
+	
 	class Respond(threading.Thread):
 		
 		def __init__(self, responses, callback):
@@ -40,38 +40,44 @@ class Crabot:
 					self.callback(msg)
 				time.sleep(1)
 	
+	
 	class Cmd(threading.Thread):
 		
-		def __init__(self, msg, cmds, responses):
+		def __init__(self, data, cmds, responses):
 			super().__init__()
-			self.msg = msg
+			self.data = data
 			self.cmds = cmds
 			self.responses = responses
 		
 		def run(self):
-			self.parser(self.msg)
+			self.parser(self.data)
 		
-		def parser(self, cmd):
+		def parser(self, data):
 			obj = self.cmds
 			i = 0
-			for c in cmd:
+			for c in data["msg"]:
 				if(c in obj):
 					obj = obj[c]
 				else:
 					break
 				i += 1
 			
-			if(callable(obj["fun"])):
-				res = obj["fun"](cmd[i:])
-				if(res):
-					self.responses.put(res)
+			if("fun" in obj and callable(obj["fun"])):
+				data["cmd"] = data["msg"][0:i]
+				data["msg"] = data["msg"][i:] if data["msg"][i] != " " else data["msg"][i + 1:]
+				data["response"] = obj["fun"](data)
+				if(data["response"]):
+					self.responses.put(data)
 
 
-bot = Crabot({"!h" : "hello"}, lambda msg: print(msg))
-for i in range(100):
-	bot.evalCmd("!h Cap'n Odin")
+bot = Crabot({"!h" : "highlight", "Hello" : "hello", "Goodbye" : "goodbye"}, lambda data: print(data["response"]))
 
+bot.evalCmd({"msg" : "!h if(True) {\n\tMsgBox, % \"Hello World\"\n}", "lan" : "Autohotkey"})
 
+input()
 
-
+#for i in range(100):
+#	bot.evalCmd({"msg" : "Hello", "name" : "Cap'n Odin"})
+#	bot.evalCmd({"msg" : "Goodbye", "name" : "Cap'n Odin"})
+	
 
